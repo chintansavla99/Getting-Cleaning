@@ -1,0 +1,6 @@
+The final output file contains 6 observation and 87 variables
+The 6 observation are 
+"WALKING","WALKING_UPSTAIRS","WALKING_DOWNSTAIRS","SITTING","STANDING","LAYING"
+
+The 87 variables contains mean value of for each observation
+
