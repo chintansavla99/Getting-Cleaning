@@ -1,0 +1,104 @@
+---
+title: "README"
+output: html_document
+---
+First we change the working directory to UCI HAR Dataset 
+```{r}
+setwd("~/UCI HAR Dataset")
+```
+
+Reading the features.txt file
+```{r} 
+features<-read.table("features.txt")
+```
+
+Removing the first column of features which converts features to vector
+```{r} 
+features<-features[,2]
+```
+
+Reading training data
+```{r}
+setwd("~/UCI HAR Dataset/train")
+dt_train<-read.table("X_train.txt", col.names = features)
+train_activity<-read.table("y_train.txt")
+```
+Reading test data
+```{r}
+setwd("~/UCI HAR Dataset/test")
+dt_test<-read.table("X_test.txt",col.names = features)
+test_activity<-read.table("y_test.txt")
+```
+Reading Activity Labels
+```{r}
+setwd("~/UCI HAR Dataset")
+activity_labels<-read.table("activity_labels.txt")
+```
+Replacing the data in train_activity and test_activity with activity labels so that data becomes more redable 
+```{r}
+test_activity<-apply(test_activity,1,function(x){
+  switch(x,"WALKING","WALKING_UPSTAIRS","WALKING_DOWNSTAIRS","SITTING","STANDING","LAYING")
+})
+
+train_activity<-apply(train_activity,1,function(x){
+       switch(x,"WALKING","WALKING_UPSTAIRS","WALKING_DOWNSTAIRS","SITTING","STANDING","LAYING")})
+```
+Creating an activity array with train_activity and test_activity
+```{r}
+activity<-c(train_activity,test_activity)
+```
+Merging the train and test data set
+```{r}
+dt<-rbind(dt_train,dt_test)
+```
+Adding activity column to our mergerd data set
+```{r}
+dt$activityname<-activity
+```
+Extracting only mean and sd columns using grepl function.
+
+We use sapply function over column names of dt and generate a logical vector which have **TRUE** value if "Mean" is present in the column name
+```{r}
+meanlogi<-sapply(names(dt), function(x)grepl("mean",x,ignore.case = TRUE))
+```
+Similarly we do the apply same logic to get the logical vector for Standard Deviation
+```{r}
+stdlogi<-sapply(names(dt), function(x)grepl("std",x,ignore.case = TRUE))
+```
+Now we generate a logi vector which have **TRUE** value for all mean and sd columns
+
+```{r}
+logi<-as.logical()
+for (i in 1:562) {
+  logi[i]<-meanlogi[i]||stdlogi[i]
+}
+
+```
+Setting the last column to TRUE (because it has our activity information) and generating the tidy data 
+```{r}
+ logi[562]<-TRUE
+ tidydata<-dt[logi]
+```
+To calculate the Average according to activity we need to group the data. So using split function to group the data
+```{r}
+sp<-split(tidydata,factor(tidydata[,87]))
+```
+Calculating the average 
+```{r}
+ avgact<-data.frame()
+
+ for (i in seq_along(sp)) {
+  avgact[i,1]<-names(sp)[[i]]
+   for (j in 1:86) {
+     
+     avgact[i,j+1]<-colMeans(sp[[i]][j])
+   }
+   
+ }
+colnames(avgact)<-c('Activity',names(tidydata)[1:86])
+```
+Saving the avgact to final.txt file
+```{r}
+write.table(avgact,"final.txt",row.names = FALSE)
+```
+
